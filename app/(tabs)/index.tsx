@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Image, Dimensions, ActivityIndicator } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Image, Dimensions, ActivityIndicator, RefreshControl } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
 import { router } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { supabase } from '@/utils/supabase';
@@ -12,6 +12,7 @@ const { width: screenWidth } = Dimensions.get('window');
 
 const Index = () => {
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [user, setUser] = useState<any>(null);
     const [courses, setCourses] = useState<Course[]>([]);
     const [carouselImages, setCarouselImages] = useState<CarouselImage[]>([]);
@@ -165,6 +166,22 @@ const Index = () => {
         return 'Good Evening';
     };
 
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        try {
+            await Promise.all([
+                checkUser(),
+                loadCourses(),
+                loadCarousel(),
+                loadStandaloneLectures()
+            ]);
+        } catch (error) {
+            console.error('Error refreshing data:', error);
+        } finally {
+            setRefreshing(false);
+        }
+    }, []);
+
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
@@ -175,7 +192,18 @@ const Index = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+            <ScrollView 
+                style={styles.scrollView} 
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={['#4CAF50']}
+                        tintColor="#4CAF50"
+                    />
+                }
+            >
                 {/* Greeting Section */}
                 <View style={styles.greetingContainer}>
                     <Text style={styles.greetingText}>{getGreeting()}</Text>
