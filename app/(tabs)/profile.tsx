@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ActivityIndicator, Alert, Image } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ActivityIndicator, Alert, Image, ScrollView, RefreshControl } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/utils/supabase';
 import { router } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { userService } from '@/utils/services/user';
 
 export default function Profile() {
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [user, setUser] = useState<any>(null);
 
     useEffect(() => {
@@ -28,6 +29,17 @@ export default function Profile() {
         }
     };
 
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        try {
+            await checkUser();
+        } catch (error) {
+            console.error('Error refreshing profile:', error);
+        } finally {
+            setRefreshing(false);
+        }
+    }, []);
+
     const handleLogout = async () => {
         try {
             setLoading(true);
@@ -45,14 +57,14 @@ export default function Profile() {
     const navigateToEnrolledCourses = () => {
         router.push({
             pathname: '/enrolled-courses',
-            params: { preload: true }
+            params: { preload: 'true' }
         });
     };
 
     const navigateToAccountSettings = () => {
         router.push({
             pathname: '/account-settings',
-            params: { preload: true }
+            params: { preload: 'true' }
         });
     };
 
@@ -66,7 +78,18 @@ export default function Profile() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.content}>
+            <ScrollView 
+                style={styles.scrollView}
+                contentContainerStyle={styles.content}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={['#4CAF50']}
+                        tintColor="#4CAF50"
+                    />
+                }
+            >
                 {/* Profile Header */}
                 <View style={styles.profileHeader}>
                     <View style={styles.avatarContainer}>
@@ -128,7 +151,7 @@ export default function Profile() {
                         </View>
                     </TouchableOpacity>
                 </View>
-            </View>
+            </ScrollView>
         </SafeAreaView>
     );
 }
@@ -144,8 +167,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#FFFFFF',
     },
-    content: {
+    scrollView: {
         flex: 1,
+    },
+    content: {
         padding: 24,
     },
     profileHeader: {
