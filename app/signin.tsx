@@ -3,6 +3,10 @@ import { View, Alert, StatusBar, StyleSheet, TouchableOpacity, Text, ActivityInd
 import { supabase } from '@/utils/supabase';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
+
+// Generate redirect URI without useProxy (which is deprecated)
+const redirectTo = AuthSession.makeRedirectUri();
 
 export default function SignIn() {
     const router = useRouter();
@@ -17,7 +21,8 @@ export default function SignIn() {
             const { data: { session } } = await supabase.auth.getSession();
             console.log('Current session:', session);
             if (session) {
-                router.replace('/(tabs)');
+                // Try using push instead
+                router.push('/');
             }
         } catch (error) {
             console.error('Error checking session:', error);
@@ -34,7 +39,7 @@ export default function SignIn() {
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: 'exp://192.168.1.60:8081/--/signin',
+                    redirectTo: redirectTo,
                 },
             });
 
@@ -49,7 +54,7 @@ export default function SignIn() {
                 console.log('Opening URL in browser:', data.url);
                 const result = await WebBrowser.openAuthSessionAsync(
                     data.url,
-                    'exp://192.168.1.60:8081/--/signin'
+                    redirectTo
                 );
 
                 console.log('Browser result:', result);
@@ -69,7 +74,8 @@ export default function SignIn() {
 
                             if (session) {
                                 console.log('Session established after code exchange');
-                                router.replace('/(tabs)');
+                                // Try using push instead with root path
+                                router.push('/');
                             }
                         }
                     }
