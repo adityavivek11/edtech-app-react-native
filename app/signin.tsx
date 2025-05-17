@@ -4,6 +4,8 @@ import { supabase } from '@/utils/supabase';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
+import { Session } from '@supabase/supabase-js';
+import { userService } from '@/utils/services/user';
 
 // Generate redirect URI without useProxy (which is deprecated)
 const redirectTo = AuthSession.makeRedirectUri();
@@ -21,13 +23,38 @@ export default function SignIn() {
             const { data: { session } } = await supabase.auth.getSession();
             console.log('Current session:', session);
             if (session) {
-                // Try using push instead
-                router.push('/');
+                // Check if the user is allowed
+                await checkUserIsAllowed(session);
             }
         } catch (error) {
             console.error('Error checking session:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const checkUserIsAllowed = async (session: Session) => {
+        try {
+            // Ensure the user has a profile
+            await userService.ensureProfileExists(
+                session.user.id,
+                session.user.user_metadata?.full_name || ''
+            );
+            
+            // Check if the user is allowed
+            const isAllowed = await userService.checkUserIsAllowed(session.user.id);
+
+            if (isAllowed) {
+                // User is allowed, go to home
+                router.push('/');
+            } else {
+                // User is not allowed, go to waiting screen
+                router.push('/waiting-approval');
+            }
+        } catch (error) {
+            console.error('Error checking isAllowed status:', error);
+            // Let the RootLayout handle this case
+            router.push('/');
         }
     };
 
@@ -74,8 +101,8 @@ export default function SignIn() {
 
                             if (session) {
                                 console.log('Session established after code exchange');
-                                // Try using push instead with root path
-                                router.push('/');
+                                // Check if the user is allowed after successful auth
+                                await checkUserIsAllowed(session);
                             }
                         }
                     }

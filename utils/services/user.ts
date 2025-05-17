@@ -28,5 +28,56 @@ export const userService = {
             console.error('Error updating profile:', error);
             throw error;
         }
+    },
+
+    async checkUserIsAllowed(userId: string): Promise<boolean> {
+        try {
+            // Check if the user is allowed in the profiles table
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('isAllowed')
+                .eq('id', userId)
+                .single();
+            
+            if (error) {
+                console.error('Error checking if user is allowed:', error);
+                return false;
+            }
+            
+            return profile?.isAllowed || false;
+        } catch (error) {
+            console.error('Error checking if user is allowed:', error);
+            return false;
+        }
+    },
+
+    async ensureProfileExists(userId: string, fullName: string = ''): Promise<void> {
+        try {
+            // Check if profile exists
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('id', userId)
+                .single();
+            
+            if (error || !profile) {
+                // Create profile if it doesn't exist
+                const { error: insertError } = await supabase
+                    .from('profiles')
+                    .insert({
+                        id: userId,
+                        full_name: fullName,
+                        isAllowed: false,
+                    });
+                
+                if (insertError) {
+                    console.error('Error creating user profile:', insertError);
+                    throw insertError;
+                }
+            }
+        } catch (error) {
+            console.error('Error ensuring profile exists:', error);
+            throw error;
+        }
     }
 }; 

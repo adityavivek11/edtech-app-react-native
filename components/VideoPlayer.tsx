@@ -3,10 +3,10 @@ import {
   View,
   StyleSheet,
   Text,
-  Dimensions,
   TouchableOpacity,
   StatusBar,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { usePreventScreenCapture } from 'expo-screen-capture';
@@ -14,8 +14,6 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import { useNavigation } from 'expo-router';
 import { supabase } from '@/utils/supabase';
 import type { Lecture } from '@/types/database.types';
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 interface VideoPlayerProps {
   lecture?: Lecture;
@@ -25,6 +23,8 @@ interface VideoPlayerProps {
 
 export const VideoPlayer = ({ lecture, videoUrl, onProgress }: VideoPlayerProps) => {
   usePreventScreenCapture();
+
+  const { width, height } = useWindowDimensions();
 
   const [usernamePosition, setUsernamePosition] = useState({ top: 10, left: 10 });
   const [videoLayout, setVideoLayout] = useState({ width: 0, height: 0 });
@@ -107,10 +107,13 @@ export const VideoPlayer = ({ lecture, videoUrl, onProgress }: VideoPlayerProps)
       <StatusBar hidden={isFullscreen} />
 
       <View
-        style={isFullscreen ? styles.fullscreenVideoWrapper : styles.videoWrapper}
+        style={[
+          isFullscreen ? styles.fullscreenVideoWrapper : styles.videoWrapper,
+          isFullscreen && { width, height },
+        ]}
         onLayout={(event) => {
-          const { width, height } = event.nativeEvent.layout;
-          setVideoLayout({ width, height });
+          const { width: w, height: h } = event.nativeEvent.layout;
+          setVideoLayout({ width: w, height: h });
         }}
       >
         <VideoView
@@ -166,12 +169,10 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   fullscreenVideoWrapper: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    height: screenHeight,
-    width: screenWidth,
+    flex: 1,
     backgroundColor: 'black',
+    justifyContent: 'center',
+    alignItems: 'center',
     zIndex: 999,
     elevation: 10,
   },
@@ -211,3 +212,4 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
 });
+
