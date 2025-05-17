@@ -1,7 +1,6 @@
 {
   "expo": {
     "name": "auth",
-    
     "slug": "auth",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -63,7 +62,8 @@
         }
       ],
       "@react-native-google-signin/google-signin",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true

@@ -218,7 +218,8 @@ const styles = StyleSheet.create({
     },
     doubtDate: {
         fontSize: 14,
-        color: '#999999',
+        color: '#000000',
+        
     },
     doubtStatus: {
         fontSize: 14,
@@ -234,7 +235,9 @@ const styles = StyleSheet.create({
     },
     addButtonText: {
         fontSize: 16,
-        color: '#FFFFFF',
-        fontWeight: '600',
+        color: '#000000',
+        fontWeight: '400',
+        fontStyle: 'normal'
+        
     },
 }); 
