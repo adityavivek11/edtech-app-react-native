@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { View, Alert, StatusBar, StyleSheet, TouchableOpacity, Text, ActivityIndicator, SafeAreaView } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Alert, StatusBar, StyleSheet, TouchableOpacity, Text, ActivityIndicator, SafeAreaView, Image, Animated, Pressable } from 'react-native';
 import { supabase } from '@/utils/supabase';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import { Session } from '@supabase/supabase-js';
 import { userService } from '@/utils/services/user';
+import * as Font from 'expo-font';
 
 // Generate redirect URI without useProxy (which is deprecated)
 const redirectTo = AuthSession.makeRedirectUri();
@@ -13,8 +14,21 @@ const redirectTo = AuthSession.makeRedirectUri();
 export default function SignIn() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
+    const [fontsLoaded, setFontsLoaded] = useState(false);
+    const buttonScale = useRef(new Animated.Value(1)).current;
+    const buttonOpacity = useRef(new Animated.Value(1)).current;
 
     useEffect(() => {
+        async function loadFonts() {
+            await Font.loadAsync({
+                'Poppins-Regular': require('@/assets/fonts/Poppins-Regular.ttf'),
+                'Poppins-Medium': require('@/assets/fonts/Poppins-Medium.ttf'),
+                'Poppins-SemiBold': require('@/assets/fonts/Poppins-SemiBold.ttf'),
+            });
+            setFontsLoaded(true);
+        }
+
+        loadFonts();
         checkUserSignedIn();
     }, []);
 
@@ -119,7 +133,37 @@ export default function SignIn() {
         }
     };
 
-    if (loading) {
+    const onPressIn = () => {
+        Animated.parallel([
+            Animated.timing(buttonScale, {
+                toValue: 0.96,
+                duration: 150,
+                useNativeDriver: true
+            }),
+            Animated.timing(buttonOpacity, {
+                toValue: 0.9,
+                duration: 150,
+                useNativeDriver: true
+            })
+        ]).start();
+    };
+
+    const onPressOut = () => {
+        Animated.parallel([
+            Animated.timing(buttonScale, {
+                toValue: 1,
+                duration: 150,
+                useNativeDriver: true
+            }),
+            Animated.timing(buttonOpacity, {
+                toValue: 1,
+                duration: 150,
+                useNativeDriver: true
+            })
+        ]).start();
+    };
+
+    if (loading || !fontsLoaded) {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#4CAF50" />
@@ -131,18 +175,53 @@ export default function SignIn() {
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" />
             <View style={styles.content}>
-                <View style={styles.header}>
-                    <Text style={styles.title}>Welcome</Text>
-                    <Text style={styles.subtitle}>Sign in to get started</Text>
+                <View style={styles.logoContainer}>
+                    <Image 
+                        source={require('@/assets/aaa-logo.png')} 
+                        style={styles.logo}
+                        resizeMode="contain"
+                    />
                 </View>
 
-                <TouchableOpacity 
-                    style={styles.signInButton} 
-                    onPress={handleGoogleSignIn}
-                    disabled={loading}
-                >
-                    <Text style={styles.signInText}>Sign in with Google</Text>
-                </TouchableOpacity>
+                <View style={styles.illustrationContainer}>
+                    <Image 
+                        source={require('@/assets/auth-illustration.png')} 
+                        style={styles.illustration}
+                        resizeMode="contain"
+                    />
+                </View>
+
+                <View style={styles.buttonContainer}>
+                    <Pressable 
+                        onPress={handleGoogleSignIn}
+                        onPressIn={onPressIn}
+                        onPressOut={onPressOut}
+                        disabled={loading}
+                    >
+                        <Animated.View 
+                            style={[
+                                styles.signInButton,
+                                {
+                                    transform: [{ scale: buttonScale }],
+                                    opacity: buttonOpacity
+                                }
+                            ]}
+                        >
+                            <View style={styles.buttonContent}>
+                                <Image 
+                                    source={require('@/assets/google-icon.png')} 
+                                    style={styles.googleIcon} 
+                                />
+                                <Text style={styles.signInText}>Continue with Google</Text>
+                            </View>
+                        </Animated.View>
+                    </Pressable>
+                </View>
+
+                <Text style={styles.termsText}>
+                    By continuing, you agree to our Terms{'\n'}
+                    & Privacy Policy.
+                </Text>
             </View>
         </SafeAreaView>
     );
@@ -151,47 +230,83 @@ export default function SignIn() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#FAF3E0', // Cream background color
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#FAF3E0', // Cream background color
     },
     content: {
         flex: 1,
-        padding: 24,
+        padding: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    logoContainer: {
+        alignItems: 'center',
+        marginBottom: 36,
+    },
+    logo: {
+        width: 420,
+        height: 180,
+    },
+    illustrationContainer: {
+        width: '100%',
+        height: 220,
+        marginBottom: 50,
+        alignItems: 'center',
         justifyContent: 'center',
     },
-    header: {
-        marginBottom: 48,
+    illustration: {
+        width: '100%',
+        height: '100%',
+    },
+    buttonContainer: {
+        width: '100%',
         alignItems: 'center',
-    },
-    title: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: '#1A1A1A',
-        marginBottom: 8,
-    },
-    subtitle: {
-        fontSize: 16,
-        color: '#666666',
+        marginBottom: 20,
     },
     signInButton: {
-        backgroundColor: '#4CAF50',
-        padding: 16,
-        borderRadius: 12,
+        backgroundColor: 'transparent',
+        flexDirection: 'row',
+        paddingVertical: 14,
+        paddingHorizontal: 20,
+        borderRadius: 20,
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        justifyContent: 'center',
+        width: '90%',
+        maxWidth: 320,
+        borderWidth: 1.5,
+        borderColor: '#e3e0dc',
+    },
+    buttonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+    },
+    googleIcon: {
+        width: 24,
+        height: 24,
+        marginRight: 16,
     },
     signInText: {
         fontSize: 16,
-        color: '#FFFFFF',
-        fontWeight: '600',
+        fontWeight: '500',
+        fontFamily: 'Poppins-Medium',
+        color: '#3C4043', // Google's text color
+        letterSpacing: 0.25,
+        textAlign: 'center',
+        paddingTop: 3
+    },
+    termsText: {
+        fontSize: 14,
+        color: '#666666',
+        marginTop: 30,
+        textAlign: 'center',
+        fontFamily: 'Poppins-Regular',
+        letterSpacing: 0.2,
     },
 });

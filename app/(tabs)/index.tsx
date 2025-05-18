@@ -287,6 +287,8 @@ const styles = StyleSheet.create({
     carouselContainer: {
         height: 200,
         marginVertical: 20,
+        borderRadius: 15,
+        overflow: 'hidden',
     },
     carouselItem: {
         width: screenWidth,
